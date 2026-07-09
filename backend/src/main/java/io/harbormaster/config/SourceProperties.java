@@ -41,7 +41,7 @@ public record SourceProperties(Mode mode, Simulation simulation, Replay replay, 
                 centerLat = 52.2;
             }
             if (centerLon == 0) {
-                centerLon = 3.4;
+                centerLon = 3.8;
             }
             if (vesselCount <= 0) {
                 vesselCount = 120;

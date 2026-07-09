@@ -23,8 +23,10 @@ harbormaster:
     #   (run with --harbormaster.source.mode=LIVE_TCP).
     mode: SIMULATION
     simulation:
+      # North Sea approaches west of Rotterdam — the Dutch coast frames the
+      # eastern edge of the picture.
       center-lat: 52.2
-      center-lon: 3.4
+      center-lon: 3.8
       vessel-count: 120
       seed: 20260709
     replay:
