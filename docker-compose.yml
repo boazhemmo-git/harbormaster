@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./backend
+    # Default source is the scripted simulation (zero config).
+    # Live mode: HARBORMASTER_SOURCE_MODE=LIVE_TCP docker compose up
+    environment:
+      HARBORMASTER_SOURCE_MODE: ${HARBORMASTER_SOURCE_MODE:-SIMULATION}
+    expose:
+      - "8080"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
