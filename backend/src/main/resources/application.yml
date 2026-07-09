@@ -1,0 +1,64 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: harbormaster
+  threads:
+    virtual:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+harbormaster:
+  source:
+    # SIMULATION (default): deterministic scripted North Sea scenario, encoded
+    #   as real AIVDM sentences — zero configuration, every detector fires.
+    # REPLAY: loops the bundled real capture from the Norwegian coast.
+    # LIVE_TCP: streams the Norwegian Coastal Administration's open feed
+    #   (run with --harbormaster.source.mode=LIVE_TCP).
+    mode: SIMULATION
+    simulation:
+      center-lat: 52.2
+      center-lon: 3.4
+      vessel-count: 120
+      seed: 20260709
+    replay:
+      file: classpath:data/ais-replay-sample.ndjson.gz
+      speed: 1.0
+      loop: true
+    live-tcp:
+      host: 153.44.253.27
+      port: 5631
+
+  tracking:
+    # Demo-friendly windows. For live shore-station coverage, prefer
+    # coast-after: 3m / lost-after: 10m / evict-after: 60m — real coverage
+    # has natural holes that shorter windows would misread as "going dark".
+    coast-after: 90s
+    lost-after: 300s
+    evict-after: 1800s
+    trail-length: 50
+
+  detection:
+    kinematic:
+      max-speed-knots: 60
+      cooldown: 5m
+    dark-ship:
+      min-sog-knots: 3.0
+    loitering:
+      window: 10m
+      max-sog-knots: 1.0
+      cooldown: 15m
+    rendezvous:
+      max-distance-m: 300
+      min-duration: 3m
+      pair-cooldown: 30m
+
+logging:
+  level:
+    io.harbormaster: INFO
