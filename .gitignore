@@ -1,0 +1,25 @@
+# Build output
+target/
+dist/
+node_modules/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local data (full recordings are large; a trimmed sample is bundled in backend resources)
+data/*.ndjson
+data/*.ndjson.gz
+
+# Env
+.env
+*.local
