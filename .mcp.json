@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "harbormaster": {
+      "command": "java",
+      "args": ["-jar", "mcp-server/target/harbormaster-mcp.jar"],
+      "env": {
+        "HARBORMASTER_API": "http://localhost:8080"
+      }
+    }
+  }
+}
