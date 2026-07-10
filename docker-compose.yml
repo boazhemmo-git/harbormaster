@@ -2,9 +2,19 @@ services:
   backend:
     build: ./backend
     # Default source is the scripted simulation (zero config).
-    # Live mode: HARBORMASTER_SOURCE_MODE=LIVE_TCP docker compose up
+    #   Live feed:     HARBORMASTER_SOURCE_MODE=LIVE_TCP docker compose up
+    #   Kafka feed:    HARBORMASTER_SOURCE_MODE=KAFKA docker compose --profile kafka up
+    #   + Grafana:     docker compose --profile observability up   (add TRACING_ENABLED=true for traces)
     environment:
       HARBORMASTER_SOURCE_MODE: ${HARBORMASTER_SOURCE_MODE:-SIMULATION}
+      # Kafka mode (profile: kafka) — consume from the broker and, for a
+      # self-contained demo, also publish the scripted feed into the topic.
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      KAFKA_PRODUCE_SIMULATION: ${KAFKA_PRODUCE_SIMULATION:-true}
+      # Observability (profile: observability) — /actuator/prometheus is always
+      # on; tracing export is opt-in so the default run stays quiet.
+      TRACING_ENABLED: ${TRACING_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
     expose:
       - "8080"
 
@@ -14,3 +24,64 @@ services:
       - "3000:80"
     depends_on:
       - backend
+
+  # ── Kafka ingestion (profile: kafka) ─────────────────────────
+  # Single-node KRaft broker — no ZooKeeper. Topics auto-create on first use.
+  kafka:
+    image: apache/kafka:3.8.1
+    profiles: ["kafka"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  # ── Observability stack (profile: observability) ─────────────
+  # Prometheus scrapes the backend; the OTel collector fans traces into Tempo;
+  # Grafana ships pre-provisioned datasources and a Harbormaster dashboard.
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    profiles: ["observability"]
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    profiles: ["observability"]
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ./observability/otel-collector.yaml:/etc/otel-collector.yaml:ro
+    depends_on:
+      - tempo
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    profiles: ["observability"]
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    profiles: ["observability"]
+    ports:
+      - "3001:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - tempo

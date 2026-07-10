@@ -1,0 +1,92 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "schemaVersion": 39,
+  "tags": ["harbormaster"],
+  "title": "Harbormaster — Pipeline",
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "5s",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Decode rate",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "mps", "decimals": 1 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "harbormaster_messages_rate_messages_second", "legendFormat": "msg/s" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Vessels tracked",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "harbormaster_vessels", "legendFormat": "vessels" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Receive → applied latency",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "harbormaster_decode_latency_p50_seconds", "legendFormat": "p50" },
+        { "refId": "B", "expr": "harbormaster_decode_latency_p99_seconds", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Throughput by outcome (ais.process)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (outcome) (rate(ais_process_seconds_count[1m]))", "legendFormat": "{{outcome}}" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Vessels by lifecycle state",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "stacking": { "mode": "normal" } } }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "harbormaster_vessels_by_state", "legendFormat": "{{state}}" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Anomaly alerts (cumulative)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "harbormaster_alerts", "legendFormat": "{{type}}" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Dropped / rejected / decode errors",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "rate(harbormaster_lines_dropped_total[1m])", "legendFormat": "dropped" },
+        { "refId": "B", "expr": "rate(harbormaster_sentences_rejected_total[1m])", "legendFormat": "rejected" },
+        { "refId": "C", "expr": "rate(harbormaster_decode_errors_total[1m])", "legendFormat": "decode errors" }
+      ]
+    }
+  ]
+}
