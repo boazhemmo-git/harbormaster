@@ -60,6 +60,22 @@ cd backend && ./mvnw spring-boot:run     # API on :8080
 cd frontend && npm ci && npm run dev     # UI on :5173, proxied to the backend
 ```
 
+## 🤖 Ask an AI about the traffic (MCP server)
+
+The repo ships an [MCP](https://modelcontextprotocol.io) server so AI agents can interrogate the live picture in natural language — *"which tankers went dark in the last hour?"*, *"any rendezvous alerts near the coast?"*:
+
+```bash
+cd mcp-server && ../backend/mvnw -f pom.xml package
+```
+
+A `.mcp.json` is included, so opening this repo in **Claude Code** picks the server up automatically (with the backend running). For other MCP clients:
+
+```json
+{ "command": "java", "args": ["-jar", "mcp-server/target/harbormaster-mcp.jar"] }
+```
+
+Five tools: `get_fleet_overview`, `find_dark_ships`, `list_alerts`, `find_vessels`, `get_vessel`. In keeping with the house style, the stdio JSON-RPC transport is implemented from the MCP specification — no SDK, Jackson as the only dependency, tested at the raw-protocol level ([ADR-0005](docs/adr/0005-hand-rolled-mcp-server.md)). It consumes the same public REST API as the browser UI: an adapter, not a backdoor.
+
 ## Architecture
 
 ```mermaid

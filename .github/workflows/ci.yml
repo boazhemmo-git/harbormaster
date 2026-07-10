@@ -20,6 +20,20 @@ jobs:
         working-directory: backend
         run: ./mvnw -B verify
 
+  mcp-server:
+    name: MCP server — build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and test
+        working-directory: mcp-server
+        run: ../backend/mvnw -B verify
+
   frontend:
     name: Frontend — typecheck & build
     runs-on: ubuntu-latest
