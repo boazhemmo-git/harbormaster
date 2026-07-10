@@ -1,5 +1,6 @@
 server:
-  port: 8080
+  # Hosting platforms (Render, Cloud Run, ...) inject PORT.
+  port: ${PORT:8080}
 
 spring:
   application:

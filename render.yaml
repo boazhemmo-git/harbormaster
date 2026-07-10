@@ -1,0 +1,12 @@
+# Render blueprint: one-click deploy of the single-container demo.
+# Free instance type — sleeps when idle, wakes on the first request.
+services:
+  - type: web
+    name: harbormaster
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: HARBORMASTER_SOURCE_MODE
+        value: SIMULATION

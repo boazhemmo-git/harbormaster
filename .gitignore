@@ -3,6 +3,8 @@ target/
 dist/
 node_modules/
 *.class
+# frontend build staged into the backend by the single-container Dockerfile
+backend/src/main/resources/static/
 
 # IDE
 .idea/

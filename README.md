@@ -25,6 +25,12 @@ Ships that want to hide — sanctions evaders, illegal fishing fleets, smugglers
   | 🛑 Loitering | claims "under way", never moves | waiting, drifting, or lying |
 - **Streams it live** — REST snapshots plus a WebSocket feed of position deltas, alerts and pipeline stats (msg/s, decode errors, receive→applied p99 latency) into a React + deck.gl map UI.
 
+## Live demo
+
+A hosted instance runs the scripted simulation at **[harbormaster.onrender.com](https://harbormaster.onrender.com)** — free-tier hosting, so the first visit may take up to a minute while the instance wakes up. Or run your own:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/boazhemmo-git/harbormaster)
+
 ## Quickstart
 
 ```bash
