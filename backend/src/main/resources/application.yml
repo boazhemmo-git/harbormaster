@@ -13,7 +13,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  # Prometheus scrape endpoint is always on (/actuator/prometheus). Distributed
+  # tracing is opt-in so the zero-config demo stays quiet and dependency-free;
+  # the observability compose profile flips TRACING_ENABLED=true and points the
+  # OTLP exporter at its collector.
+  tracing:
+    enabled: ${TRACING_ENABLED:false}
+    sampling:
+      probability: ${TRACING_SAMPLE:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
 
 harbormaster:
   source:
@@ -22,6 +33,9 @@ harbormaster:
     # REPLAY: loops the bundled real capture from the Norwegian coast.
     # LIVE_TCP: streams the Norwegian Coastal Administration's open feed
     #   (run with --harbormaster.source.mode=LIVE_TCP).
+    # KAFKA: consumes raw NMEA from a topic as a consumer group. With
+    #   produce-simulation=true it also publishes the scripted feed, so the
+    #   mode is a self-contained demo (see the `kafka` compose profile).
     mode: SIMULATION
     simulation:
       # North Sea approaches west of Rotterdam — the Dutch coast frames the
@@ -37,6 +51,13 @@ harbormaster:
     live-tcp:
       host: 153.44.253.27
       port: 5631
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      topic: ${KAFKA_TOPIC:ais.nmea}
+      group-id: ${KAFKA_GROUP_ID:harbormaster}
+      # In the demo profile the backend both produces and consumes; in a real
+      # deployment set this false and let edge receivers own the producing.
+      produce-simulation: ${KAFKA_PRODUCE_SIMULATION:false}
 
   tracking:
     # Demo-friendly windows. For live shore-station coverage, prefer

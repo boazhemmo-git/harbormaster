@@ -12,12 +12,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *       pacing (a real capture from the Norwegian coast is bundled).</li>
  *   <li>{@code LIVE_TCP} — streams an open NMEA-over-TCP feed such as the
  *       Norwegian Coastal Administration's.</li>
+ *   <li>{@code KAFKA} — consumes raw NMEA lines from a Kafka topic, the shape
+ *       of a real deployment where edge receivers publish and the pipeline
+ *       scales out as a consumer group. Set {@code produce-simulation=true} to
+ *       also run the scripted generator as a producer, making the mode a
+ *       self-contained demo with no external feed.</li>
  * </ul>
  */
 @ConfigurationProperties(prefix = "harbormaster.source")
-public record SourceProperties(Mode mode, Simulation simulation, Replay replay, LiveTcp liveTcp) {
+public record SourceProperties(Mode mode, Simulation simulation, Replay replay, LiveTcp liveTcp, Kafka kafka) {
 
-    public enum Mode { SIMULATION, REPLAY, LIVE_TCP }
+    public enum Mode { SIMULATION, REPLAY, LIVE_TCP, KAFKA }
 
     public SourceProperties {
         if (mode == null) {
@@ -31,6 +36,9 @@ public record SourceProperties(Mode mode, Simulation simulation, Replay replay, 
         }
         if (liveTcp == null) {
             liveTcp = new LiveTcp(null, 0);
+        }
+        if (kafka == null) {
+            kafka = new Kafka(null, null, null, false);
         }
     }
 
@@ -70,6 +78,28 @@ public record SourceProperties(Mode mode, Simulation simulation, Replay replay, 
             }
             if (port <= 0) {
                 port = 5631;
+            }
+        }
+    }
+
+    /**
+     * Kafka ingestion. The pipeline consumes raw NMEA lines (String values)
+     * from {@code topic} as a member of {@code groupId} — add instances and
+     * Kafka rebalances partitions across them, which is the whole point of the
+     * mode. {@code produceSimulation} additionally runs the scripted generator
+     * as a producer into the same topic, so {@code KAFKA} works as a
+     * self-contained demo without a real upstream feed.
+     */
+    public record Kafka(String bootstrapServers, String topic, String groupId, boolean produceSimulation) {
+        public Kafka {
+            if (bootstrapServers == null || bootstrapServers.isBlank()) {
+                bootstrapServers = "localhost:9092";
+            }
+            if (topic == null || topic.isBlank()) {
+                topic = "ais.nmea";
+            }
+            if (groupId == null || groupId.isBlank()) {
+                groupId = "harbormaster";
             }
         }
     }

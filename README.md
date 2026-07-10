@@ -6,6 +6,8 @@
 ![Java 21](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot 3](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F)
 ![React + deck.gl](https://img.shields.io/badge/React%20%2B%20deck.gl-TypeScript-61DAFB)
+![Kafka](https://img.shields.io/badge/Kafka-ingestion-231F20)
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Prometheus%20%2B%20Grafana-425CC7)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 ![Harbormaster live demo](docs/demo.gif)
@@ -57,7 +59,33 @@ HARBORMASTER_SOURCE_MODE=REPLAY docker compose up
 
 # Stream the live open feed
 HARBORMASTER_SOURCE_MODE=LIVE_TCP docker compose up
+
+# Consume from Kafka (spins up a single-node KRaft broker; the backend both
+# publishes the scripted feed and consumes it, so it's self-contained)
+HARBORMASTER_SOURCE_MODE=KAFKA docker compose --profile kafka up
 ```
+
+Kafka mode is the shape of a real deployment — edge receivers publish raw NMEA
+to a topic and the pipeline scales out as a consumer group. It's an ingestion
+*source* feeding the same in-process decode pipeline, not a replacement for it,
+so the single-writer store still holds ([ADR-0006](docs/adr/0006-kafka-ingestion-source.md)).
+
+### Observability
+
+`/actuator/prometheus` is always exposed — the pipeline counters (throughput,
+drops, decode errors, latency percentiles, vessels-by-state, alerts-by-type)
+are bridged onto Micrometer, and every decoded message is wrapped in an
+`ais.process` observation that becomes both a timer histogram and an
+OpenTelemetry span. Bring up the full stack — Prometheus, an OTel collector,
+Tempo and a pre-provisioned Grafana dashboard — with:
+
+```bash
+# Grafana on :3001 (anonymous), Prometheus on :9090. Add TRACING_ENABLED=true for spans → Tempo.
+TRACING_ENABLED=true docker compose --profile observability up
+```
+
+Tracing export is opt-in so the default run stays quiet and dependency-free
+([ADR-0007](docs/adr/0007-observability.md)).
 
 ### Local development
 

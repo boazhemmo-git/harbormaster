@@ -9,6 +9,7 @@ import io.harbormaster.ais.UnsupportedMessage;
 import io.harbormaster.config.SourceProperties;
 import io.harbormaster.detection.DetectionEngine;
 import io.harbormaster.ingest.AisSource;
+import io.harbormaster.ingest.KafkaSource;
 import io.harbormaster.ingest.LiveTcpSource;
 import io.harbormaster.ingest.ReplaySource;
 import io.harbormaster.ingest.SimulationSource;
@@ -16,6 +17,8 @@ import io.harbormaster.ingest.TimestampedLine;
 import io.harbormaster.nmea.FragmentAssembler;
 import io.harbormaster.nmea.NmeaParser;
 import io.harbormaster.tracking.TrackStore;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
@@ -47,6 +50,7 @@ public class PipelineService implements SmartLifecycle {
     private final TrackStore trackStore;
     private final DetectionEngine detectionEngine;
     private final PipelineStats stats;
+    private final ObservationRegistry observationRegistry;
 
     private final BlockingQueue<TimestampedLine> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     private final FragmentAssembler assembler = new FragmentAssembler();
@@ -56,11 +60,13 @@ public class PipelineService implements SmartLifecycle {
     private volatile boolean running;
 
     public PipelineService(SourceProperties sourceProperties, TrackStore trackStore,
-                           DetectionEngine detectionEngine, PipelineStats stats) {
+                           DetectionEngine detectionEngine, PipelineStats stats,
+                           ObservationRegistry observationRegistry) {
         this.sourceProperties = sourceProperties;
         this.trackStore = trackStore;
         this.detectionEngine = detectionEngine;
         this.stats = stats;
+        this.observationRegistry = observationRegistry;
     }
 
     @Override
@@ -70,6 +76,7 @@ public class PipelineService implements SmartLifecycle {
             case SIMULATION -> new SimulationSource(sourceProperties.simulation());
             case REPLAY -> new ReplaySource(sourceProperties.replay());
             case LIVE_TCP -> new LiveTcpSource(sourceProperties.liveTcp());
+            case KAFKA -> new KafkaSource(sourceProperties.kafka(), sourceProperties.simulation());
         };
         decodeWorker = Thread.ofVirtual().name("decode-worker").start(this::decodeLoop);
         source.start(this::enqueue);
@@ -93,33 +100,46 @@ public class PipelineService implements SmartLifecycle {
                 Thread.currentThread().interrupt();
                 return;
             }
-            try {
-                process(line);
+            // One observation per message: the OTel bridge turns it into a span
+            // (when tracing is enabled) and Micrometer turns it into the
+            // `ais.process` timer histogram (always), tagged by outcome so a
+            // Grafana panel can break latency and volume down by result.
+            Observation observation = Observation.start("ais.process", observationRegistry);
+            try (Observation.Scope ignored = observation.openScope()) {
+                observation.lowCardinalityKeyValue("outcome", process(line, observation).tag);
             } catch (RuntimeException e) {
                 // Never let one hostile line kill the pipeline.
+                observation.error(e);
+                observation.lowCardinalityKeyValue("outcome", Outcome.ERROR.tag);
                 stats.decodeErrors.increment();
                 log.debug("Failed to process line: {}", line.raw(), e);
+            } finally {
+                observation.stop();
             }
             stats.recordLatencyMicros(java.time.Duration.between(line.receivedAt(), Instant.now()).toNanos() / 1000);
         }
     }
 
-    private void process(TimestampedLine line) {
+    private Outcome process(TimestampedLine line, Observation observation) {
         var sentence = NmeaParser.parse(line.raw());
         if (sentence.isEmpty()) {
             stats.checksumOrFormatRejected.increment();
-            return;
+            return Outcome.REJECTED;
         }
         stats.sentencesParsed.increment();
 
         var assembled = assembler.offer(sentence.get(), line.receivedAt());
         if (assembled.isEmpty()) {
-            return; // waiting for more fragments
+            return Outcome.INCOMPLETE; // waiting for more fragments
         }
 
         try {
             var message = AisDecoder.decode(assembled.get().payload(), assembled.get().fillBits());
             stats.markDecoded(line.receivedAt().getEpochSecond());
+            // Message type is bounded (low cardinality → metric tag); MMSI is
+            // per-vessel (high cardinality → span attribute only, never a tag).
+            observation.lowCardinalityKeyValue("message.type", String.valueOf(message.type()));
+            observation.highCardinalityKeyValue("mmsi", String.valueOf(message.mmsi()));
 
             switch (message) {
                 case PositionReport report -> {
@@ -133,8 +153,25 @@ public class PipelineService implements SmartLifecycle {
                 case StaticDataReport report -> trackStore.applyStatic(report);
                 case UnsupportedMessage ignored -> stats.unsupportedMessages.increment();
             }
+            return Outcome.DECODED;
         } catch (AisDecodeException e) {
             stats.decodeErrors.increment();
+            return Outcome.DECODE_ERROR;
+        }
+    }
+
+    /** Terminal result of processing one line — the {@code outcome} span/metric tag. */
+    private enum Outcome {
+        REJECTED("rejected"),
+        INCOMPLETE("incomplete"),
+        DECODED("decoded"),
+        DECODE_ERROR("decode_error"),
+        ERROR("error");
+
+        final String tag;
+
+        Outcome(String tag) {
+            this.tag = tag;
         }
     }
 
