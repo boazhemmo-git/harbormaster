@@ -2,7 +2,7 @@
 
 **Real-time maritime traffic intelligence from raw AIS radio sentences** — live vessel tracking with automatic detection of the evasion patterns used by sanctioned and illegally operating ships.
 
-[![CI](https://github.com/BoazHemmo/harbormaster/actions/workflows/ci.yml/badge.svg)](https://github.com/BoazHemmo/harbormaster/actions/workflows/ci.yml)
+[![CI](https://github.com/boazhemmo-git/harbormaster/actions/workflows/ci.yml/badge.svg)](https://github.com/boazhemmo-git/harbormaster/actions/workflows/ci.yml)
 ![Java 21](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot 3](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F)
 ![React + deck.gl](https://img.shields.io/badge/React%20%2B%20deck.gl-TypeScript-61DAFB)
