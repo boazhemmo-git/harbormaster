@@ -1,4 +1,5 @@
 {
+  "uid": "harbormaster",
   "annotations": { "list": [] },
   "editable": true,
   "schemaVersion": 39,
@@ -14,10 +15,9 @@
       "type": "stat",
       "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "mps", "decimals": 1 }, "overrides": [] },
-      "targets": [
-        { "refId": "A", "expr": "harbormaster_messages_rate_messages_second", "legendFormat": "msg/s" }
-      ]
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 1, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto" },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "harbormaster_messages_rate_messages_second", "instant": true, "legendFormat": "msg/s" } ]
     },
     {
       "id": 2,
@@ -25,10 +25,9 @@
       "type": "stat",
       "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "targets": [
-        { "refId": "A", "expr": "harbormaster_vessels", "legendFormat": "vessels" }
-      ]
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto" },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "harbormaster_vessels", "instant": true, "legendFormat": "vessels" } ]
     },
     {
       "id": 3,
@@ -36,10 +35,11 @@
       "type": "timeseries",
       "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "axisPlacement": "auto", "spanNulls": true } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "single", "sort": "none" }, "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] } },
       "targets": [
-        { "refId": "A", "expr": "harbormaster_decode_latency_p50_seconds", "legendFormat": "p50" },
-        { "refId": "B", "expr": "harbormaster_decode_latency_p99_seconds", "legendFormat": "p99" }
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "harbormaster_decode_latency_p50_seconds", "range": true, "legendFormat": "p50" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "harbormaster_decode_latency_p99_seconds", "range": true, "legendFormat": "p99" }
       ]
     },
     {
@@ -48,10 +48,9 @@
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
-      "targets": [
-        { "refId": "A", "expr": "sum by (outcome) (rate(ais_process_seconds_count[1m]))", "legendFormat": "{{outcome}}" }
-      ]
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "spanNulls": true } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" }, "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (outcome) (rate(ais_process_seconds_count[1m]))", "range": true, "legendFormat": "{{outcome}}" } ]
     },
     {
       "id": 5,
@@ -59,10 +58,9 @@
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short", "custom": { "stacking": { "mode": "normal" } } }, "overrides": [] },
-      "targets": [
-        { "refId": "A", "expr": "harbormaster_vessels_by_state", "legendFormat": "{{state}}" }
-      ]
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 1, "fillOpacity": 40, "showPoints": "never", "stacking": { "mode": "normal", "group": "A" }, "spanNulls": true } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" }, "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "harbormaster_vessels_by_state", "range": true, "legendFormat": "{{state}}" } ]
     },
     {
       "id": 6,
@@ -70,10 +68,9 @@
       "type": "timeseries",
       "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "targets": [
-        { "refId": "A", "expr": "harbormaster_alerts", "legendFormat": "{{type}}" }
-      ]
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter", "lineWidth": 2, "fillOpacity": 10, "showPoints": "auto", "spanNulls": true } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" }, "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "harbormaster_alerts", "range": true, "legendFormat": "{{type}}" } ]
     },
     {
       "id": 7,
@@ -81,11 +78,12 @@
       "type": "timeseries",
       "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" }, "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] } },
       "targets": [
-        { "refId": "A", "expr": "rate(harbormaster_lines_dropped_total[1m])", "legendFormat": "dropped" },
-        { "refId": "B", "expr": "rate(harbormaster_sentences_rejected_total[1m])", "legendFormat": "rejected" },
-        { "refId": "C", "expr": "rate(harbormaster_decode_errors_total[1m])", "legendFormat": "decode errors" }
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(harbormaster_lines_dropped_total[1m])", "range": true, "legendFormat": "dropped" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(harbormaster_sentences_rejected_total[1m])", "range": true, "legendFormat": "rejected" },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(harbormaster_decode_errors_total[1m])", "range": true, "legendFormat": "decode errors" }
       ]
     }
   ]
