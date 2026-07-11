@@ -72,6 +72,8 @@ so the single-writer store still holds ([ADR-0006](docs/adr/0006-kafka-ingestion
 
 ### Observability
 
+![Grafana dashboard](docs/img/grafana-dashboard.png)
+
 `/actuator/prometheus` is always exposed — the pipeline counters (throughput,
 drops, decode errors, latency percentiles, vessels-by-state, alerts-by-type)
 are bridged onto Micrometer, and every decoded message is wrapped in an
